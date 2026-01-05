@@ -5,22 +5,23 @@ from datetime import datetime, timedelta
 
 # Page config
 st.set_page_config(
-    page_title="Copilot Sankey",
+    page_title="CashFlow",
     page_icon="💰",
     layout="wide"
 )
 
 # Title
-st.title("Copilot Sankey - Transaction Flow Visualizer")
-st.markdown("Visualize your Copilot Money transactions as an interactive Sankey diagram")
+st.title("CashFlow - Fund Visualizer")
+st.markdown("Visualize your financial transactions as an interactive Sankey diagram")
 
 # Sidebar - File Upload
 st.sidebar.header("Data Upload")
 uploaded_file = st.sidebar.file_uploader("Upload your transactions CSV", type=['csv'])
+st.sidebar.caption("Currently works with Copilot Money CSV exports")
 st.sidebar.caption("🔒 Your data stays in your browser and is never sent to any server.")
 
 if uploaded_file is None:
-    st.info("Please upload your transaction export CSV from Copilot Money app")
+    st.info("Please upload your transaction CSV file (currently supports Copilot Money export format)")
     
     st.markdown("""
     ### Expected CSV Format

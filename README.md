@@ -1,6 +1,6 @@
-# Copilot Sankey - Transaction Flow Visualizer
+# CashFlow - Transaction Flow Visualizer
 
-A Streamlit web application that visualizes your Copilot Money transactions as an interactive Sankey diagram, showing how income flows into savings and various expense categories.
+A Streamlit web application that visualizes your financial transactions as an interactive Sankey diagram, showing how income flows into savings and various expense categories.
 
 ![Transaction Flow Visualization](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3.9+-3776AB?style=for-the-badge&logo=python&logoColor=white)
@@ -16,7 +16,20 @@ A Streamlit web application that visualizes your Copilot Money transactions as a
   - Category-specific metrics
 - **Percentage-Based Labels**: Node labels show percentages of income for easy comparison
 - **Automatic Refund Handling**: Negative amounts are properly handled as refunds that reduce expenses
-- **CSV File Upload**: Direct upload of Copilot Money export files - no manual file placement needed
+- **CSV File Upload**: Direct upload of transaction CSV files - no manual file placement needed
+
+## Requirements
+
+**CSV Format:** This is a generic transaction flow visualizer. Currently tested and working with CSV exports from [Copilot Money](https://copilot.money).
+
+Your CSV file should include these columns:
+- `date` - Transaction date
+- `name` - Merchant/payee name  
+- `amount` - Transaction amount (negative for income, positive for expenses)
+- `type` - Transaction type (e.g., `income`, `regular`)
+- `category` - Expense category
+- `account` - Account name
+- `excluded` - Whether to exclude (true/false)
 
 ## Demo
 
@@ -30,8 +43,8 @@ The app displays:
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/KushalBKusram/CopilotSankeyFlow.git
-cd CopilotSankeyFlow
+git clone https://github.com/KushalBKusram/CashFlow.git
+cd CashFlow
 ```
 
 2. Create a virtual environment:
@@ -54,9 +67,9 @@ streamlit run app.py
 
 2. Open your browser to `http://localhost:8501`
 
-3. Upload your **Copilot Money** export CSV file using the file uploader in the sidebar
+3. Export your transactions from **Copilot Money** app and upload the CSV file using the file uploader in the sidebar
 
-That's it! The app will automatically process your Copilot Money transactions and visualize them.
+That's it! The app will automatically process your transactions and visualize them.
 
 ## Customization
 
@@ -89,7 +102,7 @@ The app currently filters:
 ## Project Structure
 
 ```
-CopilotSankeyFlow/
+CashFlow/
 ├── app.py                       # Main Streamlit application
 ├── requirements.txt             # Python dependencies
 ├── .gitignore                   # Git ignore rules
@@ -141,4 +154,4 @@ For issues or questions, please open an issue on GitHub.
 
 ---
 
-**Note**: This app works directly with CSV exports from **Copilot Money**. Simply export your transactions and upload them through the web interface.
+**Note**: Currently supports CSV exports from **Copilot Money** app. Export your transactions from Copilot Money and upload them through the web interface. Future versions may support additional financial apps.
