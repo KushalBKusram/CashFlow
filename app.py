@@ -11,7 +11,7 @@ st.set_page_config(
 )
 
 # Title
-st.title("CashFlow - Fund Visualizer")
+st.title("CashFlow - Fund    Visualizer")
 st.markdown("Visualize your financial transactions as an interactive Sankey diagram")
 
 # Sidebar - File Upload
