@@ -68,6 +68,22 @@ date_range_option = st.sidebar.selectbox(
     index=2  # Default to "Last Month"
 )
 
+# Tag filter selector
+# Extract unique tags (excluding empty/NaN values)
+if 'tags' in df.columns:
+    unique_tags = df['tags'].dropna()
+    unique_tags = unique_tags[unique_tags != ''].unique()
+    unique_tags = sorted(unique_tags.tolist())
+
+    tag_options = ["All Tags"] + unique_tags
+    selected_tag = st.sidebar.selectbox(
+        "Filter by Tag",
+        tag_options,
+        index=0
+    )
+else:
+    selected_tag = "All Tags"
+
 # Calculate date range
 end_date = datetime.now()
 if date_range_option == "Last Week":
@@ -92,6 +108,10 @@ filtered_df = df.copy()
 if date_range_option != "All Time":
     filtered_df = filtered_df[(filtered_df['date'] >= start_date) & (filtered_df['date'] <= end_date)]
 
+# Apply tag filter
+if selected_tag != "All Tags" and 'tags' in df.columns:
+    filtered_df = filtered_df[filtered_df['tags'] == selected_tag]
+
 # Separate income and expenses
 # Income: only transactions tagged as 'income'
 income_df = filtered_df[filtered_df['type'] == 'income']
@@ -112,16 +132,25 @@ total_expenses = category_totals.sum()
 savings = total_income - total_expenses
 
 # Display metrics
-col1, col2, col3, col4 = st.columns(4)
-with col1:
-    st.metric("Income", f"${total_income:,.2f}", delta=None)
-with col2:
-    st.metric("Expenses", f"${total_expenses:,.2f}", delta=None, delta_color="inverse")
-with col3:
-    st.metric("Savings", f"${savings:,.2f}", delta=None)
-with col4:
-    savings_rate = (savings / total_income * 100) if total_income > 0 else 0
-    st.metric("Savings Rate", f"{savings_rate:.2f}%", delta=None)
+# When a tag is selected, hide savings metrics (they don't make sense for filtered data)
+if selected_tag != "All Tags" and 'tags' in df.columns:
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Total Expenses", f"${total_expenses:,.2f}", delta=None, delta_color="inverse")
+    with col2:
+        num_transactions = len(filtered_df)
+        st.metric("Transactions", f"{num_transactions:,}", delta=None)
+else:
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Income", f"${total_income:,.2f}", delta=None)
+    with col2:
+        st.metric("Expenses", f"${total_expenses:,.2f}", delta=None, delta_color="inverse")
+    with col3:
+        st.metric("Savings", f"${savings:,.2f}", delta=None)
+    with col4:
+        savings_rate = (savings / total_income * 100) if total_income > 0 else 0
+        st.metric("Savings Rate", f"{savings_rate:.2f}%", delta=None)
 
 # Create Sankey diagram
 labels = ["Income"]
@@ -130,8 +159,9 @@ target = []
 values = []
 colors = []
 
-# Add savings if positive
-if savings > 0:
+# Add savings if positive (but only when viewing all tags)
+tag_is_selected = selected_tag != "All Tags" and 'tags' in df.columns
+if savings > 0 and not tag_is_selected:
     labels.append("Savings")
     source.append(0)  # Income
     target.append(1)  # Savings
@@ -149,7 +179,7 @@ for idx, (category, amount) in enumerate(category_totals.items()):
 
 # Create node colors
 node_colors = ["rgba(16, 185, 129, 0.8)"]  # Green for Income
-if savings > 0:
+if savings > 0 and not tag_is_selected:
     node_colors.append("rgba(59, 130, 246, 0.8)")  # Blue for Savings
 
 # Add colors for expense categories
@@ -157,6 +187,10 @@ for idx in range(len(category_totals)):
     node_colors.append(f"rgba({(idx * 50) % 255}, {(idx * 100) % 255}, {(idx * 150) % 255}, 0.8)")
 
 # Create custom hover text for labels
+# When a tag is selected, show percentages relative to total expenses
+# When "All Tags" is selected, show percentages relative to total income
+percentage_base = total_expenses if (selected_tag != "All Tags" and 'tags' in df.columns) else total_income
+
 node_labels = []
 for i, label in enumerate(labels):
     if i == 0:  # Income
@@ -165,7 +199,10 @@ for i, label in enumerate(labels):
         node_labels.append(f"Savings ({savings/total_income*100:.2f}%)")
     else:
         cat_amount = category_totals.get(label, 0)
-        node_labels.append(f"{label} ({cat_amount/total_income*100:.2f}%)")
+        if percentage_base > 0:
+            node_labels.append(f"{label} ({cat_amount/percentage_base*100:.2f}%)")
+        else:
+            node_labels.append(f"{label}")
 
 fig = go.Figure(data=[go.Sankey(
     node=dict(
@@ -185,8 +222,14 @@ fig = go.Figure(data=[go.Sankey(
     orientation='h'
 )])
 
+# Update title based on whether a tag is selected
+if tag_is_selected:
+    diagram_title = f"Expense Breakdown for '{selected_tag}'"
+else:
+    diagram_title = "Income Flow to Savings and Expense Categories"
+
 fig.update_layout(
-    title="Income Flow to Savings and Expense Categories",
+    title=diagram_title,
     font=dict(size=12),
     height=600
 )
@@ -261,11 +304,18 @@ with col3:
 
 # Top categories legend
 st.subheader("Top Expense Categories")
-legend_df = pd.DataFrame({
-    'Category': category_totals.head(10).index,
-    'Amount': category_totals.head(10).values,
-    'Percentage': (category_totals.head(10).values / total_income * 100)
-})
-legend_df['Amount'] = legend_df['Amount'].apply(lambda x: f"${x:,.2f}")
-legend_df['Percentage'] = legend_df['Percentage'].apply(lambda x: f"{x:.2f}%")
-st.dataframe(legend_df, hide_index=True, use_container_width=True)
+
+# Use total expenses for percentage when tag is selected, otherwise use total income
+legend_percentage_base = total_expenses if (selected_tag != "All Tags" and 'tags' in df.columns) else total_income
+
+if legend_percentage_base > 0:
+    legend_df = pd.DataFrame({
+        'Category': category_totals.head(10).index,
+        'Amount': category_totals.head(10).values,
+        'Percentage': (category_totals.head(10).values / legend_percentage_base * 100)
+    })
+    legend_df['Amount'] = legend_df['Amount'].apply(lambda x: f"${x:,.2f}")
+    legend_df['Percentage'] = legend_df['Percentage'].apply(lambda x: f"{x:.2f}%")
+    st.dataframe(legend_df, hide_index=True, use_container_width=True)
+else:
+    st.info("No expense data available for the selected filters.")
