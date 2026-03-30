@@ -119,7 +119,7 @@ if date_range_option != "All Time":
 if selected_tag != "All Tags" and 'tags' in df.columns:
     filtered_df = filtered_df[filtered_df['tags'] == selected_tag]
 
-tab1, tab2 = st.tabs(["💰 Sankey Flow", "📈 Year-end Projections"])
+tab1, tab2 = st.tabs(["💰 Spending Tracker", "📈 Year-end Projections"])
 
 # ── TAB 1: Sankey Flow ─────────────────────────────────────────────────────────
 with tab1:
